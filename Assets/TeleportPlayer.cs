@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class TeleportPlayer : MonoBehaviour
 {
@@ -11,10 +12,19 @@ public class TeleportPlayer : MonoBehaviour
 
     [SerializeField]
     private GameObject player;
-    public GameObject leftTeleportInteractor;    
-    public GameObject rightTeleportInteractor;
 
-    public List<Transform> hotspots;
+    [SerializeField]
+    private float platformSpeed;
+
+    [SerializeField]
+    private GameObject leftTeleportInteractor;
+    
+    [SerializeField]
+    private GameObject rightTeleportInteractor;
+
+    [SerializeField]
+    private List<Transform> hotspots;
+
     private int currentTarget = 0;
 
     private Transform nextTarget;
@@ -23,17 +33,28 @@ public class TeleportPlayer : MonoBehaviour
     private Rigidbody rb;
     private bool playerOnPlatform = false;
 
+    [SerializeField]
+    private bool toggleTunneling = true;
+
+    [SerializeField]
+    private UnityEvent _whenOnPlatform;
+    
+    [SerializeField]
+    private UnityEvent _whenOutPlatform;
+
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         pathFollower = GetComponent<PathFollower>();
+        platformSpeed = 0;
         nextTarget = hotspots[currentTarget];
     }
 
     // Update is called once per frame
     void Update()
     {
+        pathFollower.speed = platformSpeed;
         if (playerOnPlatform)
             CheckEndPath();
     }
@@ -43,6 +64,10 @@ public class TeleportPlayer : MonoBehaviour
         if (Vector3.Distance(rb.position, nextTarget.position) < 1.25f)
         {
             UnsetPlayerOnPlatform();
+        }
+        else if (Vector3.Distance(rb.position, nextTarget.position) < 3.5f)
+        {
+            StartCoroutine(ChangeSpeed(platformSpeed, 0f, 2.5f));
         }
     }
 
@@ -59,10 +84,14 @@ public class TeleportPlayer : MonoBehaviour
         rightTeleportInteractor.SetActive(true);
 
         TeleportPlayerTo(FindClosestHotspot());
+        if (toggleTunneling)
+            _whenOutPlatform.Invoke();
 
-        pathFollower.speed = 0;
+        platformSpeed = 0;
         playerOnPlatform = false;
     }
+
+    
 
     private Transform FindClosestHotspot()
     {
@@ -112,7 +141,7 @@ public class TeleportPlayer : MonoBehaviour
 
     IEnumerator WaitPlatformToCome()
     {
-        pathFollower.speed = 2;
+        platformSpeed = 2;
         while (Vector3.Distance(rb.position, nextTarget.position) > 1.25f)
         {
             yield return new WaitForSeconds(0.1f);
@@ -120,11 +149,36 @@ public class TeleportPlayer : MonoBehaviour
         SetNextTarget();
 
         player.transform.parent = transform;
-
         leftTeleportInteractor.SetActive(false);
         rightTeleportInteractor.SetActive(false);
+
         TeleportPlayerTo(spawnPoint);
-        pathFollower.speed = 2;
+        if (toggleTunneling)
+            _whenOnPlatform.Invoke();
+
+        StartCoroutine(ChangeSpeed(0f, 2f, 1.5f));
         playerOnPlatform = true;
+    }
+
+    IEnumerator ChangeSpeed(float v_start, float v_end, float duration)
+    {
+        float elapsed = 0.0f;
+        while (elapsed < duration)
+        {
+            platformSpeed = Mathf.Lerp(v_start, v_end, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        platformSpeed = v_end;
+    }
+
+    public void ToggleTunneling()
+    {
+        toggleTunneling = !toggleTunneling;
+    }
+
+    public bool GetTunneling()
+    {
+        return toggleTunneling;
     }
 }
