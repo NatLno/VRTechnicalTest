@@ -16,6 +16,8 @@ public class TeleportPlayer : MonoBehaviour
     [SerializeField]
     private float platformSpeed;
 
+    public float maxSpeed = 2f;
+
     [SerializeField]
     private GameObject leftTeleportInteractor;
     
@@ -35,6 +37,9 @@ public class TeleportPlayer : MonoBehaviour
 
     [SerializeField]
     private bool toggleTunneling = true;
+
+    [SerializeField]
+    private bool smoothStartStop = true;
 
     [SerializeField]
     private UnityEvent _whenOnPlatform;
@@ -65,7 +70,7 @@ public class TeleportPlayer : MonoBehaviour
         {
             UnsetPlayerOnPlatform();
         }
-        else if (Vector3.Distance(rb.position, nextTarget.position) < 3.5f)
+        else if (Vector3.Distance(rb.position, nextTarget.position) < 3.5f && smoothStartStop)
         {
             StartCoroutine(ChangeSpeed(platformSpeed, 0f, 2.5f));
         }
@@ -156,7 +161,10 @@ public class TeleportPlayer : MonoBehaviour
         if (toggleTunneling)
             _whenOnPlatform.Invoke();
 
-        StartCoroutine(ChangeSpeed(0f, 2f, 1.5f));
+        if (smoothStartStop)
+            StartCoroutine(ChangeSpeed(0f, maxSpeed, 1.5f));
+        else
+            platformSpeed = maxSpeed;
         playerOnPlatform = true;
     }
 
@@ -180,5 +188,15 @@ public class TeleportPlayer : MonoBehaviour
     public bool GetTunneling()
     {
         return toggleTunneling;
+    }
+
+    public void ToggleSmoothStartStop()
+    {
+        smoothStartStop = !smoothStartStop;
+    }
+
+    public bool GetSmoothStartStop()
+    {
+        return smoothStartStop;
     }
 }
