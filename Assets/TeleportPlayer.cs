@@ -47,11 +47,16 @@ public class TeleportPlayer : MonoBehaviour
     [SerializeField]
     private UnityEvent _whenOutPlatform;
 
+    private AudioSource audioSource;
+
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         pathFollower = GetComponent<PathFollower>();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource != null )
+            audioSource.Stop();
         platformSpeed = 0;
         nextTarget = hotspots[currentTarget];
     }
@@ -92,6 +97,8 @@ public class TeleportPlayer : MonoBehaviour
         if (toggleTunneling)
             _whenOutPlatform.Invoke();
 
+        if (audioSource != null)
+            audioSource.Stop();
         platformSpeed = 0;
         playerOnPlatform = false;
     }
@@ -165,6 +172,9 @@ public class TeleportPlayer : MonoBehaviour
             StartCoroutine(ChangeSpeed(0f, maxSpeed, 1.5f));
         else
             platformSpeed = maxSpeed;
+        
+        if (audioSource != null)
+            audioSource.Play();
         playerOnPlatform = true;
     }
 
