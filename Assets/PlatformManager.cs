@@ -7,6 +7,7 @@ public class PlatformManager : MonoBehaviour
 {
     public TMP_Text textMeshTunneling;
     public TMP_Text textMeshSmoothStartStop;
+    public TMP_Text textMeshAudioSource;
     public TeleportPlayer player;
 
     // Start is called before the first frame update
@@ -28,5 +29,15 @@ public class PlatformManager : MonoBehaviour
         else if (!player.GetSmoothStartStop())
             textMeshSmoothStartStop.text = "Disabled";
 
+        if (textMeshAudioSource != null)
+        {
+            AudioSource audioSource = player.GetAudioSource();
+            if (audioSource == null || !audioSource.enabled)
+                textMeshAudioSource.text = "No Audio Source";
+            else if (audioSource.isPlaying)
+                textMeshAudioSource.text = "Enabled";
+            else if (!audioSource.isPlaying)
+                textMeshAudioSource.text = "Disabled";
+        }
     }
 }

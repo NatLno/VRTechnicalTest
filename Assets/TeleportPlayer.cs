@@ -36,7 +36,7 @@ public class TeleportPlayer : MonoBehaviour
     private bool playerOnPlatform = false;
 
     [SerializeField]
-    private bool toggleTunneling = true;
+    private bool tunneling = true;
 
     [SerializeField]
     private bool smoothStartStop = true;
@@ -94,7 +94,7 @@ public class TeleportPlayer : MonoBehaviour
         rightTeleportInteractor.SetActive(true);
 
         TeleportPlayerTo(FindClosestHotspot());
-        if (toggleTunneling)
+        if (tunneling)
             _whenOutPlatform.Invoke();
 
         if (audioSource != null)
@@ -153,7 +153,7 @@ public class TeleportPlayer : MonoBehaviour
 
     IEnumerator WaitPlatformToCome()
     {
-        platformSpeed = 2;
+        platformSpeed = 6;
         while (Vector3.Distance(rb.position, nextTarget.position) > 1.25f)
         {
             yield return new WaitForSeconds(0.1f);
@@ -165,7 +165,7 @@ public class TeleportPlayer : MonoBehaviour
         rightTeleportInteractor.SetActive(false);
 
         TeleportPlayerTo(spawnPoint);
-        if (toggleTunneling)
+        if (tunneling)
             _whenOnPlatform.Invoke();
 
         if (smoothStartStop)
@@ -192,12 +192,12 @@ public class TeleportPlayer : MonoBehaviour
 
     public void ToggleTunneling()
     {
-        toggleTunneling = !toggleTunneling;
+        tunneling = !tunneling;
     }
 
     public bool GetTunneling()
     {
-        return toggleTunneling;
+        return tunneling;
     }
 
     public void ToggleSmoothStartStop()
@@ -208,5 +208,20 @@ public class TeleportPlayer : MonoBehaviour
     public bool GetSmoothStartStop()
     {
         return smoothStartStop;
+    }
+
+    public void ToggleAudioSource()
+    {
+        if (audioSource != null)
+        {
+            if (audioSource.isPlaying)
+                audioSource.Stop();
+            else
+                audioSource.Play();
+        }
+    }
+    public AudioSource GetAudioSource()
+    {
+        return audioSource;
     }
 }
