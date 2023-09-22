@@ -1,11 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Splines;
 
-class Hotspot
+[System.Serializable]
+public class Hotspot
 {
+    [SerializeField]
     private float _posInSpline;
+    [SerializeField]
     private Transform _transform;
 
     public Hotspot(float posInSpline, Transform transform)
@@ -29,56 +35,63 @@ public class SplineManager : MonoBehaviour
 {
     [SerializeField]
     private Transform spawnPoint;
-
     [SerializeField]
     private GameObject player;
 
     [SerializeField]
     private GameObject leftTeleportInteractor;
-
     [SerializeField]
     private GameObject rightTeleportInteractor;
 
-    [SerializeField]
-    private List<Transform> hotspotsTransform;
+    public List<Hotspot> hotspots;
 
     [SerializeField]
-    private List<float> hotspotsSplinePos;
+    private bool tunneling = false;
+    [SerializeField]
+    private TunnelingManager tunnelingManager;
 
+    [SerializeField]
+    private UnityEvent _whenOnPlatform;
+    [SerializeField]
+    private UnityEvent _whenOutPlatform;
+
+    [SerializeField]
     private bool playerOnPlatform = false;
 
+    private Hotspot nextHotspotTarget;
+    private int currentHotspotIndex = 0;
 
-    private Hotspot nextTarget;
-    private int currentHotspot = 0;
-
-    public Dictionary<int, Transform> test;
     private SplineAnimate splineAnimate;
 
-    private List<Hotspot> hotspots;
+    private AudioSource audioSource;
 
     // Start is called before the first frame update
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
         splineAnimate = GetComponent<SplineAnimate>();
         splineAnimate.Pause();
-        hotspots = new List<Hotspot>();
-        for (int i = 0; i < hotspotsSplinePos.Count; i++)
-        {
-            if (hotspotsSplinePos[i] < 0)
-                hotspotsSplinePos[i] = 0;
-            if (hotspotsSplinePos[i] > 1)
-                hotspotsSplinePos[i] = 1;
-
-            hotspots.Add(new Hotspot(hotspotsSplinePos[i], hotspotsTransform[i]));
-        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (playerOnPlatform && Mathf.Abs(splineAnimate.normalizedTime - nextTarget.GetPosInSpline()) < 0.01f)
+        CheckToUnsetPlayerToPlatform();
+        if (tunnelingManager != null)
+            SetTunnelingParam();
+    }
+
+    private void CheckToUnsetPlayerToPlatform()
+    {
+        if (playerOnPlatform)
         {
-            UnsetPlayerToPlatform();
+            float dist = float.MaxValue;
+            if (nextHotspotTarget.GetPosInSpline() == 0)
+                dist = Mathf.Abs(splineAnimate.ElapsedTime - (splineAnimate.Duration * 2));
+            else
+                dist = Mathf.Abs(splineAnimate.ElapsedTime - nextHotspotTarget.GetPosInSpline());
+            if (dist < 0.1f)
+                UnsetPlayerToPlatform();
         }
     }
 
@@ -99,42 +112,105 @@ public class SplineManager : MonoBehaviour
         return res;
     }
 
-    public void TeleportPlayerTo(Transform point)
+    private void TeleportPlayerTo(Transform point)
     {
         player.transform.position = point.position;
     }
 
-    public void SetPlayerToPlatform()
+    public void SetPlayerToPlatform(Transform currentHotspot)
     {
+        GetCurrentHotspot(currentHotspot);
         IncrementHotspot();
         Hotspot hotspot = FindClosestHotspot(player.transform);
-        splineAnimate.StartOffset = hotspot.GetPosInSpline();
+        splineAnimate.ElapsedTime = hotspot.GetPosInSpline();
 
         player.transform.parent = transform;
         leftTeleportInteractor.SetActive(false);
         rightTeleportInteractor.SetActive(false);
 
         TeleportPlayerTo(spawnPoint);
+        //_whenOnPlatform.Invoke();
         playerOnPlatform = true;
+
         splineAnimate.Play();
     }
 
-    void IncrementHotspot()
-    {
-        currentHotspot = (currentHotspot + 1) % hotspots.Count;
-        nextTarget = hotspots[currentHotspot];
-    }
-
-    public void UnsetPlayerToPlatform()
+    private void UnsetPlayerToPlatform()
     {
         splineAnimate.Pause();
 
-        Hotspot hotspot = FindClosestHotspot(player.transform);
         player.transform.parent = null;
         leftTeleportInteractor.SetActive(true);
         rightTeleportInteractor.SetActive(true);
 
+        Hotspot hotspot = FindClosestHotspot(player.transform);
         TeleportPlayerTo(hotspot.GetTransform());
+        //_whenOutPlatform.Invoke();
         playerOnPlatform = false;
+    }
+
+    private void GetCurrentHotspot(Transform currentHotspot)
+    {
+        for (int i = 0; i < hotspots.Count; i++)
+        {
+            if (hotspots[i].GetTransform() == currentHotspot)
+            {
+                currentHotspotIndex = i;
+                nextHotspotTarget = hotspots[currentHotspotIndex];
+                return;
+            }
+        }
+    }
+
+    private void IncrementHotspot()
+    {
+        currentHotspotIndex = (currentHotspotIndex + 1) % hotspots.Count;
+        nextHotspotTarget = hotspots[currentHotspotIndex];
+    }
+
+
+    public void ToggleAudioSource()
+    {
+        if (audioSource != null)
+        {
+            if (audioSource.isPlaying)
+                audioSource.Stop();
+            else
+                audioSource.Play();
+        }
+    }
+
+    public AudioSource GetAudioSource()
+    {
+        return audioSource;
+    }
+
+    public bool GetTunneling()
+    {
+        return tunneling;
+    }
+
+    public void SetTunneling(bool value)
+    {
+        tunneling = value;
+    }
+
+    public void ToggleTunneling()
+    {
+        tunneling = !tunneling;
+    }
+
+    public void SetTunnelingParam()
+    {
+        if (playerOnPlatform && tunneling)
+        {
+            tunnelingManager.SetApertureSize(0.7f);
+            tunnelingManager.SetFeatheringEffect(0.3f);
+        }
+        else
+        {
+            tunnelingManager.SetApertureSize(1f);
+            tunnelingManager.SetFeatheringEffect(1f);
+        }
     }
 }
