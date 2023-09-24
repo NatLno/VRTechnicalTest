@@ -7,7 +7,7 @@ public class TunnelingManager : MonoBehaviour
     // Start is called before the first frame update
 
     private Renderer rend;
-    private float duration = 1f;
+    private float duration = 0.5f;
     void Start()
     {
         rend = GetComponent<Renderer>();

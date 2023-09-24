@@ -27,11 +27,11 @@ public class UIPlatformManager : MonoBehaviour
     void CheckAudioSource()
     {
         AudioSource audioSource = splineManager.GetAudioSource();
-        if (audioSource == null || !audioSource.enabled)
+        if (audioSource == null)
             textMeshAudioSource.text = "No Audio Source";
-        else if (audioSource.isPlaying)
+        else if (audioSource.enabled)
             textMeshAudioSource.text = "Enabled";
-        else if (!audioSource.isPlaying)
+        else if (!audioSource.enabled)
             textMeshAudioSource.text = "Disabled";
     }
 }

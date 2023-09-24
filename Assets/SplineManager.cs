@@ -77,8 +77,6 @@ public class SplineManager : MonoBehaviour
     void Update()
     {
         CheckToUnsetPlayerToPlatform();
-        if (tunnelingManager != null)
-            SetTunnelingParam();
     }
 
     private void CheckToUnsetPlayerToPlatform()
@@ -131,6 +129,7 @@ public class SplineManager : MonoBehaviour
         TeleportPlayerTo(spawnPoint);
         //_whenOnPlatform.Invoke();
         playerOnPlatform = true;
+        SetPlatformParam();
 
         splineAnimate.Play();
     }
@@ -147,6 +146,7 @@ public class SplineManager : MonoBehaviour
         TeleportPlayerTo(hotspot.GetTransform());
         //_whenOutPlatform.Invoke();
         playerOnPlatform = false;
+        SetPlatformParam();
     }
 
     private void GetCurrentHotspot(Transform currentHotspot)
@@ -173,10 +173,7 @@ public class SplineManager : MonoBehaviour
     {
         if (audioSource != null)
         {
-            if (audioSource.isPlaying)
-                audioSource.Stop();
-            else
-                audioSource.Play();
+            audioSource.enabled = !audioSource.enabled;
         }
     }
 
@@ -200,6 +197,12 @@ public class SplineManager : MonoBehaviour
         tunneling = !tunneling;
     }
 
+    public void SetPlatformParam()
+    {
+        SetTunnelingParam();
+        SetAudioParam();
+    }
+
     public void SetTunnelingParam()
     {
         if (playerOnPlatform && tunneling)
@@ -207,10 +210,21 @@ public class SplineManager : MonoBehaviour
             tunnelingManager.SetApertureSize(0.7f);
             tunnelingManager.SetFeatheringEffect(0.3f);
         }
-        else
+        else if (!playerOnPlatform || !tunneling)
         {
             tunnelingManager.SetApertureSize(1f);
             tunnelingManager.SetFeatheringEffect(1f);
+        }
+    }
+
+    public void SetAudioParam()
+    {
+        if (audioSource != null && audioSource.enabled)
+        {
+            if (playerOnPlatform)
+                audioSource.Play();
+            else
+                audioSource.Stop();
         }
     }
 }
