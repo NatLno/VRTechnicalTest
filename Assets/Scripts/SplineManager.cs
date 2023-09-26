@@ -45,9 +45,12 @@ public class SplineManager : MonoBehaviour
 
     public List<Hotspot> hotspots;
 
+    [SerializeField]
     private bool tunneling = false;
     [SerializeField]
     private TunnelingManager tunnelingManager;
+    private float apertureSize = 0.3f;
+    private float featheringEffect = 0.3f;
 
     private bool smoothStartStop = false;
 
@@ -56,6 +59,7 @@ public class SplineManager : MonoBehaviour
     [SerializeField]
     private UnityEvent _whenOutPlatform;
 
+    [SerializeField]
     private bool playerOnPlatform = false;
 
     private Hotspot nextHotspotTarget;
@@ -205,12 +209,32 @@ public class SplineManager : MonoBehaviour
         SetAudioParam();
     }
 
+    public void SetApertureSize(float value)
+    {
+        apertureSize = value;
+    }
+    
+    public void SetFeatheringEffect(float value)
+    {
+        featheringEffect = value;
+    }
+
+    public float GetApertureSize()
+    {
+        return apertureSize;
+    }
+
+    public float GetFeatheringEffect()
+    {
+        return featheringEffect;
+    }
+
     public void SetTunnelingParam()
     {
         if (playerOnPlatform && tunneling)
         {
-            tunnelingManager.SetApertureSize(0.3f);
-            tunnelingManager.SetFeatheringEffect(0.3f);
+            tunnelingManager.SetApertureSize(apertureSize);
+            tunnelingManager.SetFeatheringEffect(featheringEffect);
         }
         else if (!playerOnPlatform || !tunneling)
         {

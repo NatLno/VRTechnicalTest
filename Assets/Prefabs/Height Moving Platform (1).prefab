@@ -3317,7 +3317,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textMeshTunneling: {fileID: 5855614031345050561}
+  textMeshRadiusValue: {fileID: 0}
+  radiusSlider: {fileID: 0}
+  textMeshTransparencyValue: {fileID: 0}
+  transparencySlider: {fileID: 0}
   textMeshAudioSource: {fileID: 1278969522660310439}
+  textMeshSmoothStartStop: {fileID: 0}
   splineManager: {fileID: 5189978351360442728}
 --- !u!1 &3301940558821017309
 GameObject:
