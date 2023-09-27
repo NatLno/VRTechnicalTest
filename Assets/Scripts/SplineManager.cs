@@ -267,4 +267,13 @@ public class SplineManager : MonoBehaviour
             splineAnimate.Easing = SplineAnimate.EasingMode.None;
     }
 
+    public void StartPlatform()
+    {
+        splineAnimate.Play();
+    }
+
+    public void StopPlatform()
+    {
+        splineAnimate.Pause();
+    }
 }
