@@ -9,7 +9,7 @@ using UnityEngine.Events;
 public class OVRLever : MonoBehaviour
 {
     [SerializeField]
-    private OneGrabRotateTransformer grabRotateTransformer;
+    private OneGrabRotateTransformerIncrement grabRotateTransformer;
     
     [SerializeField]
     [Tooltip("The object that is visually grabbed and manipulated")]
@@ -18,6 +18,9 @@ public class OVRLever : MonoBehaviour
     [SerializeField]
     [Range(0f, 1f)]
     float m_Value;
+
+    [SerializeField]
+    float m_Increment;
 
     [SerializeField]
     [Tooltip("Angle of the lever in the 'on' position")]
@@ -42,14 +45,19 @@ public class OVRLever : MonoBehaviour
 
     [SerializeField]
     [Tooltip("Events to trigger when the lever deactivates")]
-    UnityEvent m_OnLeverDeactivate = new UnityEvent();
+    UnityEvent m_OnLeverDesactivate = new UnityEvent();
 
-    private float LeverDeadZoneAudio = 0.3f;
+    private float LeverDeadZone = 0.3f;
     private bool previousActivationState = false;
     public float value
     {
         get => m_Value;
         set => m_Value = value;
+    }
+    public float increment
+    {
+        get => m_Increment;
+        set => m_Increment = value;
     }
 
     public float maxAngle
@@ -73,7 +81,7 @@ public class OVRLever : MonoBehaviour
 
     public UnityEvent onLeverActivate => m_OnLeverActivate;
 
-    public UnityEvent onLeverDeactivate => m_OnLeverDeactivate;
+    public UnityEvent onLeverDesactivate => m_OnLeverDesactivate;
 
 
     private void Start()
@@ -93,9 +101,9 @@ public class OVRLever : MonoBehaviour
 
     private void CheckLeverStatus()
     {
-        if (GetNormalizedValue() >= 1f - LeverDeadZoneAudio && GetNormalizedValue() <= 1f) 
+        if (GetNormalizedValue() >= 1f - LeverDeadZone && GetNormalizedValue() <= 1f) 
             isActivated = true;
-        else if (GetNormalizedValue() >= 0f && GetNormalizedValue() <= 0f + LeverDeadZoneAudio)
+        else if (GetNormalizedValue() >= 0f && GetNormalizedValue() <= 0f + LeverDeadZone)
             isActivated = false;
 
         if (isActivated != previousActivationState)
@@ -103,7 +111,7 @@ public class OVRLever : MonoBehaviour
             if (isActivated)
                 onLeverActivate.Invoke();
             else
-                onLeverDeactivate.Invoke();
+                onLeverDesactivate.Invoke();
 
             previousActivationState = isActivated;
         }
@@ -123,6 +131,8 @@ public class OVRLever : MonoBehaviour
         float val = GetValue();
         grabRotateTransformer.Constraints.MaxAngle.Value = m_MaxAngle - val;
         grabRotateTransformer.Constraints.MinAngle.Value = m_MinAngle - val;
+
+        grabRotateTransformer.IncrementAmount = ConvertIncrement();
     }
 
     void SetHandleAngle(float angle)
@@ -153,6 +163,11 @@ public class OVRLever : MonoBehaviour
     private float GetValue()
     {
         return Mathf.Lerp(m_MinAngle, m_MaxAngle, m_Value);
+    }
+
+    private float ConvertIncrement()
+    {
+        return Mathf.Lerp(m_MinAngle, m_MaxAngle, m_Increment) - minAngle;
     }
 
     void OnValidate()
