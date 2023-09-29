@@ -17,12 +17,12 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
     public Transform Pivot => _pivotTransform != null ? _pivotTransform : transform;
 
     [SerializeField]
-    private Axis _rotationRightAxis = Axis.Right;
+    private Axis _rotationAxis1 = Axis.Right;
     [SerializeField]
-    private Axis _rotationForwardAxis = Axis.Forward;
+    private Axis _rotationAxis2 = Axis.Forward;
 
-    public Axis RotationRightAxis => _rotationRightAxis;
-    public Axis RotationForwardAxis => _rotationForwardAxis;
+    public Axis RotationAxis1 => _rotationAxis1;
+    public Axis RotationAxis2 => _rotationAxis2;
 
     [System.Serializable]
     public class OneGrabRotateConstraints
@@ -59,7 +59,8 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
 
     private IGrabbable _grabbable;
     private Vector3 _grabPositionInPivotSpace;
-    private Pose _transformPoseInPivotSpace;
+    private Pose _transformPoseInPivotSpace1;
+    private Pose _transformPoseInPivotSpace2;
 
     private Pose _worldPivotPose;
     private Vector3 _previousVectorInPivotSpace1;
@@ -102,8 +103,7 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
         }
 
         Vector3 localAxis = Vector3.zero;
-        localAxis[(int)_rotationRightAxis] = 1f;
-        localAxis[(int)_rotationForwardAxis] = 1f;
+        localAxis[(int)_rotationAxis1] = 1f;
 
         _worldPivotPose = ComputeWorldPivotPose();
         Vector3 rotationAxis = _worldPivotPose.rotation * localAxis;
@@ -115,8 +115,7 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
         if (Mathf.Abs(grabDelta.magnitude) < 0.001f)
         {
             Vector3 localAxisNext = Vector3.zero;
-            localAxisNext[((int)_rotationRightAxis + 1) % 3] = 0.001f;
-            localAxisNext[((int)_rotationForwardAxis + 1) % 3] = 0.001f;
+            localAxisNext[((int)_rotationAxis1 + 1) % 3] = 0.001f;
             grabDelta = _worldPivotPose.rotation * localAxisNext;
         }
 
@@ -127,7 +126,7 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
             inverseRotation * (targetTransform.position - _worldPivotPose.position);
 
         Quaternion worldRotationDelta = inverseRotation * targetTransform.rotation;
-        _transformPoseInPivotSpace = new Pose(worldPositionDelta, worldRotationDelta);
+        _transformPoseInPivotSpace1 = new Pose(worldPositionDelta, worldRotationDelta);
 
         Vector3 initialOffset = _worldPivotPose.rotation * _grabPositionInPivotSpace;
         Vector3 initialVector = Vector3.ProjectOnPlane(initialOffset, rotationAxis);
@@ -137,7 +136,7 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
         _relativeAngle1 = _startAngle1;
 
         float parentScale = targetTransform.parent != null ? targetTransform.parent.lossyScale.x : 1f;
-        _transformPoseInPivotSpace.position /= parentScale;
+        _transformPoseInPivotSpace1.position /= parentScale;
     }
 
     public void UpdateTransform()
@@ -146,9 +145,9 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
         var targetTransform = _grabbable.Transform;
 
         Vector3 localAxis1 = Vector3.zero;
-        localAxis1[(int)_rotationRightAxis] = 1f;
+        localAxis1[(int)_rotationAxis1] = 1f;
         Vector3 localAxis2 = Vector3.zero;
-        localAxis2[(int)_rotationForwardAxis] = 1f;
+        localAxis2[(int)_rotationAxis2] = 1f;
         
         _worldPivotPose = ComputeWorldPivotPose();
         Vector3 rotationAxis1 = _worldPivotPose.rotation * localAxis1;
@@ -156,58 +155,70 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
 
         // Project our positional offsets onto a plane with normal equal to the rotation axis
         Vector3 targetOffset = grabPoint.position - _worldPivotPose.position;
-        Vector3 targetVector1 = Vector3.ProjectOnPlane(targetOffset, rotationAxis1);
-        Vector3 targetVector2 = Vector3.ProjectOnPlane(targetOffset, rotationAxis2);
 
-        Vector3 previousVectorInWorldSpace1 =
-            _worldPivotPose.rotation * _previousVectorInPivotSpace1;
-        Vector3 previousVectorInWorldSpace2 =
-            _worldPivotPose.rotation * _previousVectorInPivotSpace2;
+        float angle1 = Vector3.Dot(targetOffset, rotationAxis1);
+        float angle2 = Vector3.Dot(targetOffset, rotationAxis2);
 
-        // update previous
-        _previousVectorInPivotSpace1 = Quaternion.Inverse(_worldPivotPose.rotation) * targetVector1;
-        _previousVectorInPivotSpace2 = Quaternion.Inverse(_worldPivotPose.rotation) * targetVector2;
+        Quaternion rotation1 = Quaternion.AngleAxis(angle1, rotationAxis1);
+        Quaternion rotation2 = Quaternion.AngleAxis(angle2, rotationAxis2);
 
-        float signedAngle1 =
-            Vector3.SignedAngle(previousVectorInWorldSpace1, targetVector1, rotationAxis1);
-        float signedAngle2 =
-            Vector3.SignedAngle(previousVectorInWorldSpace2, targetVector2, rotationAxis2);
+        targetTransform.rotation = _worldPivotPose.rotation * rotation1 * rotation2;
+        //Vector3 targetVector1 = Vector3.ProjectOnPlane(targetOffset, rotationAxis1);
+        //Vector3 targetVector2 = Vector3.ProjectOnPlane(targetOffset, rotationAxis2);
 
-        _relativeAngle1 += signedAngle1;
-        _relativeAngle1 += signedAngle2;
+        //Vector3 previousVectorInWorldSpace1 =
+        //    _worldPivotPose.rotation * _previousVectorInPivotSpace1;
+        //Vector3 previousVectorInWorldSpace2 =
+        //    _worldPivotPose.rotation * _previousVectorInPivotSpace2;
 
-        _constrainedRelativeAngle1 = _relativeAngle1;
-        _constrainedRelativeAngle2 = _relativeAngle2;
-        if (Constraints.MinAngle.Constrain)
-        {
-            _constrainedRelativeAngle1 = Mathf.Max(_constrainedRelativeAngle1, Constraints.MinAngle.Value);
-            _constrainedRelativeAngle2 = Mathf.Max(_constrainedRelativeAngle2, Constraints.MinAngle.Value);
-        }
-        if (Constraints.MaxAngle.Constrain)
-        {
-            _constrainedRelativeAngle1 = Mathf.Min(_constrainedRelativeAngle1, Constraints.MaxAngle.Value);
-            _constrainedRelativeAngle2 = Mathf.Min(_constrainedRelativeAngle2, Constraints.MaxAngle.Value);
-        }
+        //// update previous
+        //_previousVectorInPivotSpace1 = Quaternion.Inverse(_worldPivotPose.rotation) * targetVector1;
+        //_previousVectorInPivotSpace2 = Quaternion.Inverse(_worldPivotPose.rotation) * targetVector2;
 
-        Quaternion deltaRotation1 = Quaternion.AngleAxis(_constrainedRelativeAngle1 - _startAngle1, rotationAxis1);
-        Quaternion deltaRotation2 = Quaternion.AngleAxis(_constrainedRelativeAngle2 - _startAngle2, rotationAxis1);
+        //float signedAngle1 =
+        //    Vector3.SignedAngle(previousVectorInWorldSpace1, targetVector1, rotationAxis1);
+        //float signedAngle2 =
+        //    Vector3.SignedAngle(previousVectorInWorldSpace2, targetVector2, rotationAxis2);
 
-        float parentScale = targetTransform.parent != null ? targetTransform.parent.lossyScale.x : 1f;
-        Pose transformDeltaInWorldSpace1 =
-            new Pose(
-                _worldPivotPose.rotation * (parentScale * _transformPoseInPivotSpace.position),
-                _worldPivotPose.rotation * _transformPoseInPivotSpace.rotation);
-        Pose transformDeltaInWorldSpace2 =
-            new Pose(
-                _worldPivotPose.rotation * (parentScale * _transformPoseInPivotSpace.position),
-                _worldPivotPose.rotation * _transformPoseInPivotSpace.rotation);
+        //_relativeAngle1 += signedAngle1;
+        //_relativeAngle2 += signedAngle2;
 
-        Pose transformDeltaRotated = new Pose(
-            deltaRotation1 * transformDeltaInWorldSpace1.position,
-            deltaRotation1 * transformDeltaInWorldSpace1.rotation);
+        //_constrainedRelativeAngle1 = _relativeAngle1;
+        //_constrainedRelativeAngle2 = _relativeAngle2;
+        //if (Constraints.MinAngle.Constrain)
+        //{
+        //    _constrainedRelativeAngle1 = Mathf.Max(_constrainedRelativeAngle1, Constraints.MinAngle.Value);
+        //    _constrainedRelativeAngle2 = Mathf.Max(_constrainedRelativeAngle2, Constraints.MinAngle.Value);
+        //}
+        //if (Constraints.MaxAngle.Constrain)
+        //{
+        //    _constrainedRelativeAngle1 = Mathf.Min(_constrainedRelativeAngle1, Constraints.MaxAngle.Value);
+        //    _constrainedRelativeAngle2 = Mathf.Min(_constrainedRelativeAngle2, Constraints.MaxAngle.Value);
+        //}
 
-        targetTransform.position = _worldPivotPose.position + transformDeltaRotated.position;
-        targetTransform.rotation = transformDeltaRotated.rotation;
+        //Quaternion deltaRotation1 = Quaternion.AngleAxis(_constrainedRelativeAngle1 - _startAngle1, rotationAxis1);
+        //Quaternion deltaRotation2 = Quaternion.AngleAxis(_constrainedRelativeAngle2 - _startAngle2, rotationAxis1);
+
+        //float parentScale = targetTransform.parent != null ? targetTransform.parent.lossyScale.x : 1f;
+
+        //Pose transformDeltaInWorldSpace1 =
+        //    new Pose(
+        //        _worldPivotPose.rotation * (parentScale * _transformPoseInPivotSpace1.position),
+        //        _worldPivotPose.rotation * _transformPoseInPivotSpace1.rotation);
+        //Pose transformDeltaInWorldSpace2 =
+        //    new Pose(
+        //        _worldPivotPose.rotation * (parentScale * _transformPoseInPivotSpace2.position),
+        //        _worldPivotPose.rotation * _transformPoseInPivotSpace2.rotation);
+
+        //Pose transformDeltaRotated1 = new Pose(
+        //    deltaRotation1 * transformDeltaInWorldSpace1.position,
+        //    deltaRotation1 * transformDeltaInWorldSpace1.rotation);
+        //Pose transformDeltaRotated2 = new Pose(
+        //    deltaRotation2 * transformDeltaInWorldSpace2.position,
+        //    deltaRotation2 * transformDeltaInWorldSpace2.rotation);
+
+        //targetTransform.position = _worldPivotPose.position + transformDeltaRotated1.position + transformDeltaRotated2.position;
+        //targetTransform.rotation = transformDeltaRotated1.rotation * transformDeltaRotated2.rotation;
     }
 
     public void EndTransform() { }
@@ -221,8 +232,7 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
 
     public void InjectOptionalRotationAxis(Axis rotationAxis)
     {
-        _rotationRightAxis = rotationAxis;
-        _rotationForwardAxis = rotationAxis;
+        _rotationAxis1 = rotationAxis;
     }
 
     public void InjectOptionalConstraints(OneGrabRotateConstraints constraints)

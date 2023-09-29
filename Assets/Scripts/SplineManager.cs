@@ -10,24 +10,44 @@ using UnityEngine.Splines;
 public class Hotspot
 {
     [SerializeField]
+    private int _knotIndex;
+    [SerializeField]
+    [Range(0f, 1f)]
     private float _posInSpline;
+
     [SerializeField]
     private Transform _transform;
 
-    public Hotspot(float posInSpline, Transform transform)
+    private BezierKnot _knot;
+
+    public Hotspot(int knotIndex, float posInSpline, Transform transform, BezierKnot knot)
     {
+        _knotIndex = knotIndex;
         _posInSpline = posInSpline;
         _transform = transform;
+        _knot = knot;
+    }
+    public int KnotIndex
+    {
+        get => _knotIndex;
+        set => _knotIndex = value;
     }
 
-    public float GetPosInSpline()
+    public float PosInSpline
     {
-        return _posInSpline;
+        get => _posInSpline;
+        set => _posInSpline = value;
     }
-    
-    public Transform GetTransform()
+
+    public BezierKnot Knot
     {
-        return _transform;
+        get => _knot;
+        set => _knot = value;
+    }
+
+    public Transform Transform
+    {
+        get => _transform;
     }
 }
 
@@ -45,7 +65,6 @@ public class SplineManager : MonoBehaviour
 
     public List<Hotspot> hotspots;
 
-    [SerializeField]
     private bool tunneling = false;
     [SerializeField]
     private TunnelingManager tunnelingManager;
@@ -59,7 +78,6 @@ public class SplineManager : MonoBehaviour
     [SerializeField]
     private UnityEvent _whenOutPlatform;
 
-    [SerializeField]
     private bool playerOnPlatform = false;
 
     private Hotspot nextHotspotTarget;
@@ -74,7 +92,15 @@ public class SplineManager : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
         splineAnimate = GetComponent<SplineAnimate>();
-        splineAnimate.Pause();
+        SetHotspotParam();
+    }
+
+    private void SetHotspotParam()
+    {
+        foreach (Hotspot hotspot in hotspots)
+        {
+            hotspot.Knot = splineAnimate.Container.Splines[0][hotspot.KnotIndex];
+        }
     }
 
     // Update is called once per frame
@@ -89,13 +115,12 @@ public class SplineManager : MonoBehaviour
     {
         if (playerOnPlatform)
         {
-            float dist = float.MaxValue;
-            if (nextHotspotTarget.GetPosInSpline() == 0)
-                dist = Mathf.Abs(splineAnimate.ElapsedTime - (splineAnimate.Duration * 2));
-            else
-                dist = Mathf.Abs(splineAnimate.ElapsedTime - nextHotspotTarget.GetPosInSpline());
-            if (dist < 0.1f)
+            float dist = Vector3.Distance(transform.localPosition, nextHotspotTarget.Knot.Position);
+            Debug.LogWarning(dist);
+            if (dist < 0.01f * (splineAnimate.Container.Splines[0].Count) / 2.5f)
+            {
                 UnsetPlayerToPlatform();
+            }
         }
     }
 
@@ -106,7 +131,7 @@ public class SplineManager : MonoBehaviour
 
         foreach (Hotspot hotspot in hotspots)
         {
-            float dist = Vector3.Distance(gameObject.position, hotspot.GetTransform().position);
+            float dist = Vector3.Distance(gameObject.position, hotspot.Transform.position);
             if (dist < min)
             {
                 res = hotspot;
@@ -124,9 +149,10 @@ public class SplineManager : MonoBehaviour
     public void SetPlayerToPlatform(Transform currentHotspot)
     {
         GetCurrentHotspot(currentHotspot);
+        //splineAnimate.ElapsedTime = hotspot.GetPosInSpline();
+        splineAnimate.StartOffset = nextHotspotTarget.PosInSpline;
+        splineAnimate.Restart(true);
         IncrementHotspot();
-        Hotspot hotspot = FindClosestHotspot(player.transform);
-        splineAnimate.ElapsedTime = hotspot.GetPosInSpline();
 
         player.transform.parent = transform;
         leftTeleportInteractor.SetActive(false);
@@ -134,10 +160,15 @@ public class SplineManager : MonoBehaviour
 
         TeleportPlayerTo(spawnPoint);
         //_whenOnPlatform.Invoke();
+        StartCoroutine(WaitBeforePlay(0.1f));
+    }
+
+    IEnumerator WaitBeforePlay(float time)
+    {
+        yield return new WaitForSeconds(time);
+        splineAnimate.Play();
         playerOnPlatform = true;
         SetPlatformParam();
-
-        splineAnimate.Play();
     }
 
     private void UnsetPlayerToPlatform()
@@ -150,7 +181,7 @@ public class SplineManager : MonoBehaviour
 
         Hotspot hotspot = FindClosestHotspot(player.transform);
         playerOnPlatform = false;
-        TeleportPlayerTo(hotspot.GetTransform());
+        TeleportPlayerTo(hotspot.Transform);
         //_whenOutPlatform.Invoke();
         SetPlatformParam();
     }
@@ -159,7 +190,7 @@ public class SplineManager : MonoBehaviour
     {
         for (int i = 0; i < hotspots.Count; i++)
         {
-            if (hotspots[i].GetTransform() == currentHotspot)
+            if (hotspots[i].Transform == currentHotspot)
             {
                 currentHotspotIndex = i;
                 nextHotspotTarget = hotspots[currentHotspotIndex];
@@ -272,8 +303,27 @@ public class SplineManager : MonoBehaviour
         splineAnimate.Play();
     }
 
-    public void StopPlatform()
+    public void StopPlatform(bool smoothStop)
     {
-        splineAnimate.Pause();
+        //if (!smoothStop)
+        //{
+        //splineAnimate.Pause();
+            //return;
+        //}
+        //float currentSpeed = splineAnimate.Duration;
+        //StartCoroutine(SmoothSpeed(currentSpeed, float.MaxValue, 1.5f));
     }
+
+    //IEnumerator SmoothSpeed(float startSpeed, float endSpeed, float duration)
+    //{
+    //    float elapsed = 0.0f;
+    //    while (elapsed < duration)
+    //    {
+    //        splineAnimate.Duration = Mathf.Lerp(startSpeed, endSpeed, elapsed / duration);
+    //        elapsed += Time.deltaTime;
+    //        yield return null;
+    //    }
+        
+    //    splineAnimate.Pause();
+    //}
 }
