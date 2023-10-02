@@ -10,27 +10,20 @@ using UnityEngine.Splines;
 public class Hotspot
 {
     [SerializeField]
-    private int _knotIndex;
-    [SerializeField]
     [Range(0f, 1f)]
     private float _posInSpline;
 
     [SerializeField]
     private Transform _transform;
 
+    [SerializeField]
     private BezierKnot _knot;
 
-    public Hotspot(int knotIndex, float posInSpline, Transform transform, BezierKnot knot)
+    public Hotspot(float posInSpline, Transform transform, BezierKnot knot)
     {
-        _knotIndex = knotIndex;
         _posInSpline = posInSpline;
         _transform = transform;
         _knot = knot;
-    }
-    public int KnotIndex
-    {
-        get => _knotIndex;
-        set => _knotIndex = value;
     }
 
     public float PosInSpline
@@ -99,8 +92,26 @@ public class SplineManager : MonoBehaviour
     {
         foreach (Hotspot hotspot in hotspots)
         {
-            hotspot.Knot = splineAnimate.Container.Splines[0][hotspot.KnotIndex];
+            hotspot.Knot = FindClosestKnot(hotspot);
         }
+    }
+
+    private BezierKnot FindClosestKnot(Hotspot hotspot)
+    {
+        float min = float.MaxValue;
+        BezierKnot res = new BezierKnot();
+
+        foreach (BezierKnot knot in splineAnimate.Container.Splines[0])
+        {
+            float dist = Vector3.Distance(hotspot.Transform.localPosition, knot.Position);
+            Debug.LogWarning(dist);
+            if (dist < min)
+            {
+                min = dist;
+                res = knot;
+            }
+        }
+        return res;
     }
 
     // Update is called once per frame
@@ -116,8 +127,8 @@ public class SplineManager : MonoBehaviour
         if (playerOnPlatform)
         {
             float dist = Vector3.Distance(transform.localPosition, nextHotspotTarget.Knot.Position);
-            Debug.LogWarning(dist);
-            if (dist < 0.01f * (splineAnimate.Container.Splines[0].Count) / 2.5f)
+
+            if (dist < 0.01f * (splineAnimate.Container.Splines[0].Count) / 2f)
             {
                 UnsetPlayerToPlatform();
             }
@@ -149,7 +160,6 @@ public class SplineManager : MonoBehaviour
     public void SetPlayerToPlatform(Transform currentHotspot)
     {
         GetCurrentHotspot(currentHotspot);
-        //splineAnimate.ElapsedTime = hotspot.GetPosInSpline();
         splineAnimate.StartOffset = nextHotspotTarget.PosInSpline;
         splineAnimate.Restart(true);
         IncrementHotspot();
@@ -159,7 +169,7 @@ public class SplineManager : MonoBehaviour
         rightTeleportInteractor.SetActive(false);
 
         TeleportPlayerTo(spawnPoint);
-        //_whenOnPlatform.Invoke();
+        _whenOnPlatform.Invoke();
         StartCoroutine(WaitBeforePlay(0.1f));
     }
 
@@ -173,6 +183,7 @@ public class SplineManager : MonoBehaviour
 
     private void UnsetPlayerToPlatform()
     {
+        StopAllCoroutines();
         splineAnimate.Pause();
 
         player.transform.parent = null;
@@ -182,7 +193,7 @@ public class SplineManager : MonoBehaviour
         Hotspot hotspot = FindClosestHotspot(player.transform);
         playerOnPlatform = false;
         TeleportPlayerTo(hotspot.Transform);
-        //_whenOutPlatform.Invoke();
+        _whenOutPlatform.Invoke();
         SetPlatformParam();
     }
 
@@ -305,25 +316,24 @@ public class SplineManager : MonoBehaviour
 
     public void StopPlatform(bool smoothStop)
     {
-        //if (!smoothStop)
-        //{
-        //splineAnimate.Pause();
-            //return;
-        //}
-        //float currentSpeed = splineAnimate.Duration;
-        //StartCoroutine(SmoothSpeed(currentSpeed, float.MaxValue, 1.5f));
+        if (!smoothStop)
+        {
+            splineAnimate.Pause();
+            return;
+        }
+        StartCoroutine(SmoothStop(2f));
     }
 
-    //IEnumerator SmoothSpeed(float startSpeed, float endSpeed, float duration)
-    //{
-    //    float elapsed = 0.0f;
-    //    while (elapsed < duration)
-    //    {
-    //        splineAnimate.Duration = Mathf.Lerp(startSpeed, endSpeed, elapsed / duration);
-    //        elapsed += Time.deltaTime;
-    //        yield return null;
-    //    }
-        
-    //    splineAnimate.Pause();
-    //}
+    IEnumerator SmoothStop(float duration)
+    {
+        float elapsed = 0.0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            splineAnimate.ElapsedTime -= Time.deltaTime / (2 * duration);
+            yield return null;
+        }
+
+        splineAnimate.Pause();
+    }
 }

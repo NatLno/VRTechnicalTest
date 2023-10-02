@@ -62,7 +62,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -6974749649518139203, guid: 44f3430c585c6514985b591c28e05a78, type: 3}
+  - {fileID: 5561349426305759274, guid: 44f3430c585c6514985b591c28e05a78, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -165,7 +165,7 @@ Transform:
   m_GameObject: {fileID: 3063063045966932040}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.4506, y: 1.082691, z: -5.393}
+  m_LocalPosition: {x: -0.1921971, y: -0.4479896, z: 1.5161135}
   m_LocalScale: {x: 0.8981184, y: 0.8981184, z: 0.8981184}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -184,9 +184,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62ce42e0d846d594597b6badfdede2cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  grabRotateTransformer: {fileID: 6233535444759896500}
+  grabRotateTransformer: {fileID: 5086098851999254911}
   m_Handle: {fileID: 5573722240700903249}
-  m_Value: 1
+  m_Value: 0
   m_Increment: 0.1
   m_MaxAngle: 330
   m_MinAngle: 0
@@ -318,7 +318,7 @@ GameObject:
   - component: {fileID: 9034980702935799110}
   - component: {fileID: 1863582127742356533}
   - component: {fileID: 2723389736030980115}
-  - component: {fileID: 6233535444759896500}
+  - component: {fileID: 5086098851999254911}
   m_Layer: 0
   m_Name: Knob
   m_TagString: Untagged
@@ -334,7 +334,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8966068427201970564}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.25881913, z: 0, w: -0.9659258}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -457,11 +457,11 @@ MonoBehaviour:
   _transferOnSecondSelection: 0
   _addNewPointsToFront: 0
   _forwardElement: {fileID: 0}
-  _oneGrabTransformer: {fileID: 6233535444759896500}
+  _oneGrabTransformer: {fileID: 5086098851999254911}
   _twoGrabTransformer: {fileID: 0}
   _targetTransform: {fileID: 0}
   _maxGrabPoints: -1
---- !u!114 &6233535444759896500
+--- !u!114 &5086098851999254911
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -470,14 +470,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 8966068427201970564}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb07affa3077ff9458fcce66662b7ac4, type: 3}
+  m_Script: {fileID: 11500000, guid: 1836c983d1ff031458ceb4a19e00ee4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _rotationAxis: 1
   _constraints:
     MinAngle:
       Constrain: 1
-      Value: -330
+      Value: 0
     MaxAngle:
       Constrain: 1
-      Value: 0
+      Value: 330

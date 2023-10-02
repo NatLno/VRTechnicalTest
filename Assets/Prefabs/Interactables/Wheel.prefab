@@ -64,7 +64,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6435437120023650896}
-  - component: {fileID: 7655252193338337487}
+  - component: {fileID: 5396612414519530315}
   m_Layer: 0
   m_Name: Wheel
   m_TagString: Untagged
@@ -80,7 +80,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 632600675944808376}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.5652053, y: -0.4479896, z: 1.4894263}
   m_LocalScale: {x: 0.8981184, y: 0.8981184, z: 0.8981184}
   m_ConstrainProportionsScale: 0
@@ -88,7 +88,7 @@ Transform:
   - {fileID: 937247725710288104}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7655252193338337487
+--- !u!114 &5396612414519530315
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -97,11 +97,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 632600675944808376}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62ce42e0d846d594597b6badfdede2cd, type: 3}
+  m_Script: {fileID: 11500000, guid: e79a4a397105ba04d94f41b7d7950409, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   grabRotateTransformer: {fileID: 5590889586966703726}
-  m_Handle: {fileID: 2969755203278175871}
+  m_Handle: {fileID: 6435437120023650896}
   m_Value: 0
   m_Increment: 0
   m_MaxAngle: 360
