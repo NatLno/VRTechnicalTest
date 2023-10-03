@@ -108,7 +108,6 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
 
         direction.y = Mathf.Clamp(direction.y, 0.01f, 1.0f);
         return direction.normalized;
-        //return Vector3.zero;
     }
 
     public void UpdateTransform()
