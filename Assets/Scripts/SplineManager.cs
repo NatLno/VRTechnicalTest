@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Splines;
@@ -71,6 +70,7 @@ public class SplineManager : MonoBehaviour
     [SerializeField]
     private UnityEvent _whenOutPlatform;
 
+    [SerializeField]
     private bool playerOnPlatform = false;
 
     private Hotspot nextHotspotTarget;
@@ -85,6 +85,7 @@ public class SplineManager : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
         splineAnimate = GetComponent<SplineAnimate>();
+        nextHotspotTarget = hotspots[1];
         SetHotspotParam();
     }
 
@@ -104,7 +105,6 @@ public class SplineManager : MonoBehaviour
         foreach (BezierKnot knot in splineAnimate.Container.Splines[0])
         {
             float dist = Vector3.Distance(hotspot.Transform.localPosition, knot.Position);
-            Debug.LogWarning(dist);
             if (dist < min)
             {
                 min = dist;
@@ -127,7 +127,6 @@ public class SplineManager : MonoBehaviour
         if (playerOnPlatform)
         {
             float dist = Vector3.Distance(transform.localPosition, nextHotspotTarget.Knot.Position);
-
             if (dist < 0.01f * (splineAnimate.Container.Splines[0].Count) / 2f)
             {
                 UnsetPlayerToPlatform();
@@ -321,10 +320,10 @@ public class SplineManager : MonoBehaviour
             splineAnimate.Pause();
             return;
         }
-        StartCoroutine(SmoothStop(2f));
+        StartCoroutine(SmoothStop(2f, true));
     }
 
-    IEnumerator SmoothStop(float duration)
+    IEnumerator SmoothStop(float duration, bool stop)
     {
         float elapsed = 0.0f;
         while (elapsed < duration)
@@ -333,7 +332,7 @@ public class SplineManager : MonoBehaviour
             splineAnimate.ElapsedTime -= Time.deltaTime / (2 * duration);
             yield return null;
         }
-
-        splineAnimate.Pause();
+        if (stop)
+            splineAnimate.Pause();
     }
 }
