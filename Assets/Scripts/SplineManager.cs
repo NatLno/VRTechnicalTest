@@ -70,7 +70,6 @@ public class SplineManager : MonoBehaviour
     [SerializeField]
     private UnityEvent _whenOutPlatform;
 
-    [SerializeField]
     private bool playerOnPlatform = false;
 
     private Hotspot nextHotspotTarget;
@@ -85,7 +84,6 @@ public class SplineManager : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
         splineAnimate = GetComponent<SplineAnimate>();
-        nextHotspotTarget = hotspots[1];
         SetHotspotParam();
     }
 
@@ -127,7 +125,8 @@ public class SplineManager : MonoBehaviour
         if (playerOnPlatform)
         {
             float dist = Vector3.Distance(transform.localPosition, nextHotspotTarget.Knot.Position);
-            if (dist < 0.01f * (splineAnimate.Container.Splines[0].Count) / 2f)
+            Debug.LogWarning(dist);
+            if (dist < 0.05f * (splineAnimate.Container.Splines[0].Count) / 2f)
             {
                 UnsetPlayerToPlatform();
             }
