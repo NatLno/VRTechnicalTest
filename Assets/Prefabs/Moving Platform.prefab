@@ -860,7 +860,7 @@ Transform:
   m_GameObject: {fileID: 8716828497406215146}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.03242, y: 0.004, z: 0.24000025}
+  m_LocalPosition: {x: -3.71244, y: 0, z: 0.25}
   m_LocalScale: {x: 1, y: 0.011496514, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -994,8 +994,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPoint: {fileID: 2364065944359407952}
   player: {fileID: 0}
+  platformSpeed: 0
+  maxSpeed: 2
   leftTeleportInteractor: {fileID: 0}
   rightTeleportInteractor: {fileID: 0}
   hotspots:
   - {fileID: 4038849372144126170}
   - {fileID: 6280497878882379493}
+  tunneling: 1
+  smoothStartStop: 1
+  _whenOnPlatform:
+    m_PersistentCalls:
+      m_Calls: []
+  _whenOutPlatform:
+    m_PersistentCalls:
+      m_Calls: []

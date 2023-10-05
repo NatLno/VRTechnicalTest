@@ -177,7 +177,6 @@ public class OneGrabTwoRotateTransformer : MonoBehaviour, ITransformer
         var yComp = Mathf.Sqrt(1.0f - largerComp * largerComp);
 
         m_Handle.up = (transform.up * yComp) + (transform.right * xComp) + (transform.forward * zComp);
-        Debug.LogWarning(m_Handle.up);
     }
 
     public void EndTransform() 

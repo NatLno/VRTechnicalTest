@@ -9,10 +9,10 @@ namespace PathCreation.Examples
         public PathCreator pathCreator;
         public EndOfPathInstruction endOfPathInstruction;
         public float speed = 5;
+        private bool m_playing;
         float distanceTravelled;
 
         void Start() {
-            speed = 0;
             if (pathCreator != null)
             {
                 // Subscribed to the pathUpdated event so that we're notified if the path changes during the game
@@ -22,12 +22,19 @@ namespace PathCreation.Examples
 
         void Update()
         {
+            if (!m_playing)
+                return;
             if (pathCreator != null)
             {
-                distanceTravelled += speed * Time.deltaTime;
-                transform.position = pathCreator.path.GetPointAtDistance(distanceTravelled, endOfPathInstruction);
-                //transform.rotation = pathCreator.path.GetRotationAtDistance(distanceTravelled, endOfPathInstruction);
+                UpdateFollowerDistance();
             }
+        }
+
+        void UpdateFollowerDistance()
+        {
+            distanceTravelled += speed * Time.deltaTime;
+            transform.position = pathCreator.path.GetPointAtDistance(distanceTravelled, endOfPathInstruction);
+            //transform.rotation = pathCreator.path.GetRotationAtDistance(distanceTravelled, endOfPathInstruction);
         }
 
         // If the path changes during the game, update the distance travelled so that the follower's position on the new path
@@ -36,9 +43,25 @@ namespace PathCreation.Examples
             distanceTravelled = pathCreator.path.GetClosestDistanceAlongPath(transform.position);
         }
 
+        public void Play()
+        {
+            m_playing = true;
+        }
+
+        public void Stop()
+        {
+            m_playing = false;
+        }
+
         public void SetSpeed(float value)
         {
             speed = value;
+        }
+
+        public void SetDistanceTravelled(float value)
+        {
+            distanceTravelled = value;
+            UpdateFollowerDistance();
         }
     }
 }
