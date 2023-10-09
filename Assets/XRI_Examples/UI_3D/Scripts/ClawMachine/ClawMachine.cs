@@ -15,9 +15,6 @@ namespace UnityEngine.XR.Content.Interaction
         [Tooltip("The claw transform that will be updated and translated")]
         Transform m_ClawTransform;
 
-        [SerializeField]
-        [Tooltip("The claw socket used to get the prizes")]
-        XRSocketInteractor m_ClawSocket;
 
         [SerializeField]
         [Tooltip("The component used to apply a force on the prizes")]
@@ -93,11 +90,10 @@ namespace UnityEngine.XR.Content.Interaction
             // Start particles, activate the Socket and the UfoAbductionForce
             m_SparkliesParticle.Play();
             m_UfoBeamParticle.Play();
-            m_ClawSocket.socketActive = true;
             m_UfoAbductionForce.enabled = true;
 
             // Try get a prize, the claw can still move
-            while (m_ButtonPressed && !m_ClawSocket.hasSelection)
+            while (m_ButtonPressed)
             {
                 UpdateClawPosition(m_ClawAbductionSpeed);
                 yield return null;
@@ -120,7 +116,6 @@ namespace UnityEngine.XR.Content.Interaction
             }
 
             // Release the prize and stop the last particle
-            m_ClawSocket.socketActive = false;
             m_UfoBeamParticle.Stop();
 
             StartCoroutine(NoPrizeState());

@@ -70,13 +70,13 @@ public class PathFollowerManager : MonoBehaviour
 
     public void SetupPlayerOnPlatform(GameObject teleport)
     {
-        player.transform.parent = transform;
-        leftTeleportInteractor.SetActive(false);
-        rightTeleportInteractor.SetActive(false);
+        //player.transform.parent = transform;
+        //leftTeleportInteractor.SetActive(false);
+        //rightTeleportInteractor.SetActive(false);
 
         Teleport t = GetTeleport(teleport);
         pathFollower.SetDistanceTravelled(t.PosInPath);
-        TeleportPlayerTo(spawnPoint);
+        //TeleportPlayerTo(spawnPoint);
         SetNextTarget(teleport.transform);
         SetNextTarget();
         pathFollower.Play();
@@ -89,7 +89,7 @@ public class PathFollowerManager : MonoBehaviour
         leftTeleportInteractor.SetActive(true);
         rightTeleportInteractor.SetActive(true);
 
-        TeleportPlayerTo(gameObject.transform);
+        //TeleportPlayerTo(gameObject.transform);
     }
 
     private void SetNextTarget(Transform hotspot = null)
