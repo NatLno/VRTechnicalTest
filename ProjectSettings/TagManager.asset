@@ -5,6 +5,11 @@ TagManager:
   serializedVersion: 2
   tags:
   - TeleportAnchor
+  - Projectile
+  - Flame
+  - Water
+  - Destroyer
+  - SocketInteractor
   layers:
   - Default
   - TransparentFX

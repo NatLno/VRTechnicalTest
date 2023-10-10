@@ -1,110 +1,211 @@
 using Oculus.Interaction;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
-[System.Serializable]
-public class Angle
+public class OVRJoystick : MonoBehaviour, ITransformer
 {
-    [SerializeField]
-    [Range(0f, 1f)]
-    private float _value;
+    [Serializable]
+    public class ValueChangeEvent : UnityEvent<float> { }
+    
+    const float k_MaxDeadZonePercent = 0.9f;
 
-    [SerializeField]
-    [Range(-90.0f, 90.0f)]
-    private float _maxAngle = 90.0f;
-    [SerializeField]
-    [Range(-90.0f, 90.0f)]
-    private float _minAngle = -90.0f;
-
-    public Angle(float value, float maxAngle, float minAngle)
+    public enum JoystickType
     {
-        _value = value;
-        _maxAngle = maxAngle;
-        _minAngle = minAngle;
+        BothCircle,
+        BothSquare,
+        FrontBack,
+        LeftRight,
     }
-
-    public float value
-    {
-        get => _value;
-        set => _value = value;
-    }
-
-    public float maxAngle
-    {
-        get => _maxAngle;
-        set => _maxAngle = value;
-    }
-
-    public float minAngle
-    {
-        get => _minAngle;
-        set => _minAngle = value;
-    }
-}
-
-public class OVRJoystick : MonoBehaviour
-{
-    [SerializeField]
-    private OneGrabRotateTransformer grabRightRotateTransformer;
-
-    [SerializeField]
-    private OneGrabRotateTransformer grabForwardRotateTransformer;
-
+    
     [SerializeField]
     [Tooltip("The object that is visually grabbed and manipulated")]
     Transform m_Handle = null;
 
     [SerializeField]
-    private Angle m_RightValue;
-    [SerializeField]
-    private Angle m_ForwardValue;
+    [Tooltip("The value of the joystick")]
+    Vector2 m_Value = Vector2.zero;
 
-    // Start is called before the first frame update
+    [Tooltip("Controls how the joystick moves")]
+    [SerializeField]
+    JoystickType m_JoystickMotion = JoystickType.BothCircle;
+
+    [SerializeField]
+    [Tooltip("If true, the joystick will return to center on release")]
+    bool m_RecenterOnRelease = true;
+
+    [SerializeField]
+    [Tooltip("Maximum angle the joystick can move")]
+    [Range(1.0f, 90.0f)]
+    float m_MaxAngle = 60.0f;
+
+    [SerializeField]
+    [Tooltip("Minimum amount the joystick must move off the center to register changes")]
+    [Range(1.0f, 90.0f)]
+    float m_DeadZoneAngle = 10.0f;
+
+    [SerializeField]
+    [Tooltip("Events to trigger when the joystick's x value changes")]
+    ValueChangeEvent m_OnValueChangeX = new ValueChangeEvent();
+
+    [SerializeField]
+    [Tooltip("Events to trigger when the joystick's y value changes")]
+    ValueChangeEvent m_OnValueChangeY = new ValueChangeEvent();
+
+
+    public Vector2 value
+    {
+        get => m_Value;
+        set
+        {
+            if (!m_RecenterOnRelease)
+            {
+                SetValue(value);
+                SetHandleAngle(value * m_MaxAngle);
+            }
+        }
+    }
+
+    public bool recenterOnRelease
+    {
+        get => m_RecenterOnRelease;
+        set => m_RecenterOnRelease = value;
+    }
+
+    public float maxAngle
+    {
+        get => m_MaxAngle;
+        set => m_MaxAngle = value;
+    }
+
+    public float deadZoneAngle
+    {
+        get => m_DeadZoneAngle;
+        set => m_DeadZoneAngle = value;
+    }
+
+    public ValueChangeEvent onValueChangeX => m_OnValueChangeX;
+
+    public ValueChangeEvent onValueChangeY => m_OnValueChangeY;
+
+    private IGrabbable _grabbable;
+
     void Start()
     {
-        
+        if (m_RecenterOnRelease)
+            SetHandleAngle(Vector2.zero);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Initialize(IGrabbable grabbable)
+    {
+        _grabbable = grabbable;
+    }
+
+    public void BeginTransform()
     {
         
     }
 
-    float GetNormalizedRightValue()
+    Vector3 GetLookDirection()
     {
-        float rightAngle = m_Handle.localRotation.eulerAngles.x;
-        if (rightAngle > 180f)
-            rightAngle -= 360f;
+        Vector3 direction = _grabbable.GrabPoints[0].position - m_Handle.position;
+        direction = transform.InverseTransformDirection(direction);
+        switch (m_JoystickMotion)
+        {
+            case JoystickType.FrontBack:
+                direction.x = 0;
+                break;
+            case JoystickType.LeftRight:
+                direction.z = 0;
+                break;
+        }
 
-        return Mathf.InverseLerp(m_RightValue.minAngle, m_RightValue.maxAngle, rightAngle);
-    }
-    
-    float GetNormalizedForwardValue()
-    {
-        float forwardAngle = m_Handle.localRotation.eulerAngles.z;
-        if (forwardAngle > 180f)
-            forwardAngle -= 360f;
-
-        return Mathf.InverseLerp(m_ForwardValue.minAngle, m_ForwardValue.maxAngle, forwardAngle);
-    }
-
-    void SetRotateTransformerConstraints()
-    {
-        float rightValue = GetRightValue();
-        grabRightRotateTransformer.Constraints.MaxAngle.Value = m_RightValue.maxAngle - rightValue;
-        grabRightRotateTransformer.Constraints.MinAngle.Value = m_RightValue.minAngle- rightValue;
-        
-        float forwardValue = GetForwardValue();
-        grabForwardRotateTransformer.Constraints.MaxAngle.Value = m_ForwardValue.maxAngle - forwardValue;
-        grabForwardRotateTransformer.Constraints.MinAngle.Value = m_ForwardValue.minAngle - forwardValue;
+        direction.y = Mathf.Clamp(direction.y, 0.01f, 1.0f);
+        return direction.normalized;
     }
 
-    void SetHandleAngle(float rightAngle, float forwardAngle)
+    public void UpdateTransform()
     {
-        if (m_Handle != null)
-            m_Handle.localRotation = Quaternion.Euler(rightAngle, 0.0f, forwardAngle);
+        var lookDirection = GetLookDirection();
+
+        // Get up/down angle and left/right angle
+        var upDownAngle = Mathf.Atan2(lookDirection.z, lookDirection.y) * Mathf.Rad2Deg;
+        var leftRightAngle = Mathf.Atan2(lookDirection.x, lookDirection.y) * Mathf.Rad2Deg;
+
+        // Extract signs
+        var signX = Mathf.Sign(leftRightAngle);
+        var signY = Mathf.Sign(upDownAngle);
+
+        upDownAngle = Mathf.Abs(upDownAngle);
+        leftRightAngle = Mathf.Abs(leftRightAngle);
+
+        var stickValue = new Vector2(leftRightAngle, upDownAngle) * (1.0f / m_MaxAngle);
+
+        // Clamp the stick value between 0 and 1 when doing everything but circular stick motion
+        if (m_JoystickMotion != JoystickType.BothCircle)
+        {
+            stickValue.x = Mathf.Clamp01(stickValue.x);
+            stickValue.y = Mathf.Clamp01(stickValue.y);
+        }
+        else
+        {
+            // With circular motion, if the stick value is greater than 1, we normalize
+            // This way, an extremely strong value in one direction will influence the overall stick direction
+            if (stickValue.magnitude > 1.0f)
+            {
+                stickValue.Normalize();
+            }
+        }
+
+        // Rebuild the angle values for visuals
+        leftRightAngle = stickValue.x * signX * m_MaxAngle;
+        upDownAngle = stickValue.y * signY * m_MaxAngle;
+
+        // Apply deadzone and sign back to the logical stick value
+        var deadZone = m_DeadZoneAngle / m_MaxAngle;
+        var aliveZone = (1.0f - deadZone);
+        stickValue.x = Mathf.Clamp01((stickValue.x - deadZone)) / aliveZone;
+        stickValue.y = Mathf.Clamp01((stickValue.y - deadZone)) / aliveZone;
+
+        // Re-apply signs
+        stickValue.x *= signX;
+        stickValue.y *= signY;
+
+        SetHandleAngle(new Vector2(leftRightAngle, upDownAngle));
+        SetValue(stickValue);
+    }
+
+    void SetValue(Vector2 value)
+    {
+        m_Value = value;
+        m_OnValueChangeX.Invoke(m_Value.x);
+        m_OnValueChangeY.Invoke(m_Value.y);
+    }
+
+    void SetHandleAngle(Vector2 angles)
+    {
+        if (m_Handle == null)
+            return;
+
+        var xComp = Mathf.Tan(angles.x * Mathf.Deg2Rad);
+        var zComp = Mathf.Tan(angles.y * Mathf.Deg2Rad);
+        var largerComp = Mathf.Max(Mathf.Abs(xComp), Mathf.Abs(zComp));
+        var yComp = Mathf.Sqrt(1.0f - largerComp * largerComp);
+
+        m_Handle.up = (transform.up * yComp) + (transform.right * xComp) + (transform.forward * zComp);
+    }
+
+    public void EndTransform() 
+    {
+        UpdateTransform();
+
+        if (m_RecenterOnRelease)
+        {
+            SetHandleAngle(Vector2.zero);
+            SetValue(Vector2.zero);
+        }
     }
 
     void OnDrawGizmosSelected()
@@ -116,33 +217,45 @@ public class OVRJoystick : MonoBehaviour
 
         const float k_AngleLength = 0.25f;
 
-        var angleRightMaxPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_RightValue.maxAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
-        var angleRightMinPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_RightValue.minAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
-        
-        var angleForwardMaxPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, m_ForwardValue.maxAngle) * Vector3.up) * k_AngleLength;
-        var angleForwardMinPoint = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, m_ForwardValue.minAngle) * Vector3.up) * k_AngleLength;
+        if (m_JoystickMotion != JoystickType.LeftRight)
+        {
+            Gizmos.color = Color.green;
+            var axisPoint1 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_MaxAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
+            var axisPoint2 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(-m_MaxAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
+            Gizmos.DrawLine(angleStartPoint, axisPoint1);
+            Gizmos.DrawLine(angleStartPoint, axisPoint2);
 
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(angleStartPoint, angleRightMaxPoint);
-        Gizmos.DrawLine(angleStartPoint, angleForwardMaxPoint);
+            if (m_DeadZoneAngle > 0.0f)
+            {
+                Gizmos.color = Color.red;
+                axisPoint1 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(m_DeadZoneAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
+                axisPoint2 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(-m_DeadZoneAngle, 0.0f, 0.0f) * Vector3.up) * k_AngleLength;
+                Gizmos.DrawLine(angleStartPoint, axisPoint1);
+                Gizmos.DrawLine(angleStartPoint, axisPoint2);
+            }
+        }
 
-        Gizmos.DrawLine(angleStartPoint, angleRightMinPoint);
-        Gizmos.DrawLine(angleStartPoint, angleForwardMinPoint);
-    }
+        if (m_JoystickMotion != JoystickType.FrontBack)
+        {
+            Gizmos.color = Color.green;
+            var axisPoint1 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, m_MaxAngle) * Vector3.up) * k_AngleLength;
+            var axisPoint2 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, -m_MaxAngle) * Vector3.up) * k_AngleLength;
+            Gizmos.DrawLine(angleStartPoint, axisPoint1);
+            Gizmos.DrawLine(angleStartPoint, axisPoint2);
 
-    private float GetRightValue()
-    {
-        return Mathf.Lerp(m_RightValue.minAngle, m_RightValue.maxAngle, m_RightValue.value);
-    }
-
-    private float GetForwardValue()
-    {
-        return Mathf.Lerp(m_ForwardValue.minAngle, m_ForwardValue.maxAngle, m_ForwardValue.value);
+            if (m_DeadZoneAngle > 0.0f)
+            {
+                Gizmos.color = Color.red;
+                axisPoint1 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, m_DeadZoneAngle) * Vector3.up) * k_AngleLength;
+                axisPoint2 = angleStartPoint + transform.TransformDirection(Quaternion.Euler(0.0f, 0.0f, -m_DeadZoneAngle) * Vector3.up) * k_AngleLength;
+                Gizmos.DrawLine(angleStartPoint, axisPoint1);
+                Gizmos.DrawLine(angleStartPoint, axisPoint2);
+            }
+        }
     }
 
     void OnValidate()
     {
-        SetHandleAngle(GetRightValue(), GetForwardValue());
-        //SetRotateTransformerConstraints();
+        m_DeadZoneAngle = Mathf.Min(m_DeadZoneAngle, m_MaxAngle * k_MaxDeadZonePercent);
     }
 }

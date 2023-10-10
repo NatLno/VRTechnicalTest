@@ -71,5 +71,10 @@ namespace UnityEngine.XR.Content.Interaction
         {
             m_ButtonValue = value;
         }
+
+        public void SetButtonValue(float value)
+        {
+            m_ButtonValue = value;
+        }
     }
 }
