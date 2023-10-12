@@ -42,12 +42,12 @@ public class TriggerObjectInteractable : MonoBehaviour, IHandGrabUseDelegate
     private float _dampedUseStrength = 0;
     private float _lastUseTime;
 
-    private void Trigger()
+    public void Trigger()
     {
         WhenTrigger?.Invoke();
     }
 
-    private void Release()
+    public void Release()
     {
         ReleaseTrigger?.Invoke();
     }
