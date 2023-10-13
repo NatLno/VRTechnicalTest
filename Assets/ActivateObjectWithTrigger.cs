@@ -12,9 +12,11 @@ public class ActivateObjectWithTrigger : MonoBehaviour
     private UnityEvent ReleaseTrigger;
 
     private bool isTrigger = false;
+    private IGrabbable _grabbable;
 
     private void Start()
     {
+        _grabbable = GetComponent<Grabbable>();
         enabled = false;
     }
 
