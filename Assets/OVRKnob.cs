@@ -87,7 +87,7 @@ public class OVRKnob : MonoBehaviour
     {
         onStart.Invoke();
         previousActivationState = isActivated;
-        //m_Value = (isActivated) ? 1f : 0f;
+        m_Value = (isActivated) ? 1f : 0f;
         SetHandleAngle(GetValue());
         SetRotateTransformerConstraints();
     }
@@ -118,10 +118,7 @@ public class OVRKnob : MonoBehaviour
 
     float GetNormalizedValue()
     {
-        float angle = m_Handle.localRotation.eulerAngles.x;
-        if (angle > 180f)
-            angle -= 360f;
-
+        float angle = m_Handle.localRotation.eulerAngles.y;
         return Mathf.InverseLerp(m_MinAngle, m_MaxAngle, angle);
     }
 

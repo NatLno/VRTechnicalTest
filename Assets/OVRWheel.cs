@@ -20,6 +20,9 @@ public class OVRWheel : MonoBehaviour
     float m_Increment;
 
     [SerializeField]
+    bool inverseAxe = false;
+
+    [SerializeField]
     [Tooltip("Angle of the lever in the 'on' position")]
     [Range(0f, 360.0f)]
     float m_MaxAngle = 360f;
@@ -44,6 +47,7 @@ public class OVRWheel : MonoBehaviour
     [Tooltip("Events to trigger when the lever deactivates")]
     UnityEvent m_OnLeverDesactivate = new UnityEvent();
 
+    [SerializeField]
     private float LeverDeadZone = 0.3f;
     private bool previousActivationState = false;
     public float value
@@ -117,16 +121,18 @@ public class OVRWheel : MonoBehaviour
 
     float GetNormalizedValue()
     {
-        float angle = m_Handle.localRotation.eulerAngles.x;
-        if (angle > 180f)
-            angle -= 360f;
-
+        float angle = m_Handle.localRotation.eulerAngles.y;
+        if (inverseAxe && angle != 0)
+        {
+            angle = (angle - 360) * -1;
+        }
         return Mathf.InverseLerp(m_MinAngle, m_MaxAngle, angle);
     }
 
     void SetRotateTransformerConstraints()
     {
         float val = GetValue();
+
         grabRotateTransformer.Constraints.MaxAngle.Value = m_MaxAngle - val;
         grabRotateTransformer.Constraints.MinAngle.Value = m_MinAngle - val;
 
@@ -135,6 +141,8 @@ public class OVRWheel : MonoBehaviour
 
     void SetHandleAngle(float angle)
     {
+        if (inverseAxe)
+            angle = -angle;
         if (m_Handle != null)
             m_Handle.localRotation = Quaternion.Euler(0.0f, angle, 0.0f);
     }
