@@ -132,10 +132,16 @@ public class OVRWheel : MonoBehaviour
     void SetRotateTransformerConstraints()
     {
         float val = GetValue();
-
-        grabRotateTransformer.Constraints.MaxAngle.Value = m_MaxAngle - val;
-        grabRotateTransformer.Constraints.MinAngle.Value = m_MinAngle - val;
-
+        if (inverseAxe)
+        {
+            grabRotateTransformer.Constraints.MaxAngle.Value = m_MinAngle - val;
+            grabRotateTransformer.Constraints.MinAngle.Value = m_MaxAngle - val;
+        }
+        else
+        {
+            grabRotateTransformer.Constraints.MaxAngle.Value = m_MaxAngle - val;
+            grabRotateTransformer.Constraints.MinAngle.Value = m_MinAngle - val;
+        }
         grabRotateTransformer.IncrementAmount = ConvertIncrement();
     }
 
